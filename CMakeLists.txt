@@ -5,4 +5,11 @@ set(CMAKE_CXX_STANDARD 17)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.2 -Wall")
 
-add_executable(gujia main.cpp src/gujia.h)
+add_executable(gujia main.cpp
+        src/anet.c
+        src/anet.h
+        src/fmacros.h
+        src/gujia.h
+        src/gujia_epoll_impl.h
+        src/gujia_impl.h
+        src/gujia_kqueue_impl.h)

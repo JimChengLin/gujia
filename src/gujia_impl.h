@@ -12,15 +12,10 @@
 #endif
 
 namespace gujia {
-    template<size_t SIZE>
-    EventLoop<SIZE>::
+    template<typename T, size_t SIZE>
+    EventLoop<T, SIZE>::
     ~EventLoop() {
         close(el_fd_);
-    }
-
-    template<typename T, size_t SIZE>
-    ResourceManager<T, SIZE>::
-    ~ResourceManager() {
         for (int fd = 0; fd <= max_fd_; ++fd) {
             if (resources_[fd] != nullptr) {
                 close(fd);
@@ -29,10 +24,9 @@ namespace gujia {
     }
 
     template<typename T, size_t SIZE>
-    int ResourceManager<T, SIZE>::
+    int EventLoop<T, SIZE>::
     Acquire(int fd, std::unique_ptr<T> && resource) {
-        assert(fd >= 0 && resource != nullptr);
-        if (fd >= resources_.size()) { return -1; }
+        assert(fd >= 0 && fd < resources_.size() && resource != nullptr);
         resources_[fd].swap(resource);
         assert(resource == nullptr);
         max_fd_ = std::max(max_fd_, fd);
@@ -40,7 +34,7 @@ namespace gujia {
     }
 
     template<typename T, size_t SIZE>
-    int ResourceManager<T, SIZE>::
+    int EventLoop<T, SIZE>::
     Release(int fd) {
         assert(fd >= 0 && fd < resources_.size());
         resources_[fd].reset();
@@ -49,6 +43,10 @@ namespace gujia {
                 --max_fd_;
             } while (max_fd_ != -1 && resources_[max_fd_] == nullptr);
         }
+
+#if defined(GUJIA_HAS_EPOLL)
+        masks_[fd] = 0;
+#endif
         return close(fd);
     }
 }

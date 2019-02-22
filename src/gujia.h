@@ -29,17 +29,19 @@ namespace gujia {
 #include <array>
 #include <cassert>
 #include <memory>
+#include <type_traits>
 #include <unistd.h>
 
 namespace gujia {
     constexpr size_t kDefaultSize = 10000;
 
     enum {
+        kNone = 0,
         kReadable = 1 << 0,
         kWritable = 1 << 1,
     };
 
-    template<size_t SIZE = kDefaultSize>
+    template<typename T = std::false_type, size_t SIZE = kDefaultSize>
     class EventLoop {
     public:
         explicit EventLoop(int el_fd) : el_fd_(el_fd) {}
@@ -57,22 +59,13 @@ namespace gujia {
 
         static int GetEventFD(const Event & e);
 
-        static bool IsReadableEvent(const Event & e);
+        static bool IsEventReadable(const Event & e);
 
-        static bool IsWritableEvent(const Event & e);
+        static bool IsEventWritable(const Event & e);
 
         static int Open();
 
-    private:
-        int el_fd_;
-        std::array<Event, SIZE> events_;
-    };
-
-    template<typename T, size_t SIZE = kDefaultSize>
-    class ResourceManager {
     public:
-        ~ResourceManager();
-
         int Acquire(int fd, std::unique_ptr<T> && resource);
 
         int Release(int fd);
@@ -86,8 +79,14 @@ namespace gujia {
         GetResources() { return resources_; }
 
     private:
+        int el_fd_;
         int max_fd_ = -1;
+        std::array<Event, SIZE> events_;
         std::array<std::unique_ptr<T>, SIZE> resources_;
+
+#if defined(GUJIA_HAS_EPOLL)
+        std::array<int, SIZE> masks_{};
+#endif
     };
 }
 

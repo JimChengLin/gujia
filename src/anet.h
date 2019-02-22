@@ -108,7 +108,7 @@ int anetFormatPeer(int fd, char * fmt, size_t fmt_len);
 int anetFormatSock(int fd, char * fmt, size_t fmt_len);
 
 #ifdef __cplusplus
-} // extern "C"
+}
 #endif
 
 #endif

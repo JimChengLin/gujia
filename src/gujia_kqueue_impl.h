@@ -6,8 +6,8 @@
 
 #if defined(GUJIA_HAS_KQUEUE)
 namespace gujia {
-    template<size_t SIZE>
-    int EventLoop<SIZE>::
+    template<typename T, size_t SIZE>
+    int EventLoop<T, SIZE>::
     AddEvent(int fd, int mask) {
         struct kevent ke;
         if (mask & kReadable) {
@@ -21,8 +21,8 @@ namespace gujia {
         return 0;
     }
 
-    template<size_t SIZE>
-    int EventLoop<SIZE>::
+    template<typename T, size_t SIZE>
+    int EventLoop<T, SIZE>::
     DelEvent(int fd, int mask) {
         struct kevent ke;
         if (mask & kReadable) {
@@ -36,8 +36,8 @@ namespace gujia {
         return 0;
     }
 
-    template<size_t SIZE>
-    int EventLoop<SIZE>::
+    template<typename T, size_t SIZE>
+    int EventLoop<T, SIZE>::
     Poll(const struct timeval * tvp) {
         if (tvp != nullptr) {
             struct timespec timeout;
@@ -53,26 +53,26 @@ namespace gujia {
         }
     }
 
-    template<size_t SIZE>
-    int EventLoop<SIZE>::
+    template<typename T, size_t SIZE>
+    int EventLoop<T, SIZE>::
     GetEventFD(const Event & e) {
         return static_cast<int>(e.ident);
     }
 
-    template<size_t SIZE>
-    bool EventLoop<SIZE>::
-    IsReadableEvent(const Event & e) {
+    template<typename T, size_t SIZE>
+    bool EventLoop<T, SIZE>::
+    IsEventReadable(const Event & e) {
         return e.filter == EVFILT_READ;
     }
 
-    template<size_t SIZE>
-    bool EventLoop<SIZE>::
-    IsWritableEvent(const Event & e) {
+    template<typename T, size_t SIZE>
+    bool EventLoop<T, SIZE>::
+    IsEventWritable(const Event & e) {
         return e.filter == EVFILT_WRITE;
     }
 
-    template<size_t SIZE>
-    int EventLoop<SIZE>::
+    template<typename T, size_t SIZE>
+    int EventLoop<T, SIZE>::
     Open() {
         return kqueue();
     }

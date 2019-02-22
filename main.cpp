@@ -7,10 +7,6 @@
 int main() {
     using namespace gujia;
 
-    int el_fd = EventLoop<>::Open();
-    assert(el_fd >= 0);
-    EventLoop el(el_fd);
-
     struct Acceptor {
     };
     struct Processor {
@@ -23,14 +19,16 @@ int main() {
             Processor processor;
         };
 
-        Resource(int t) : type(t) {}
+        explicit Resource(int t) : type(t) {}
     };
-    ResourceManager<Resource> manager;
+
+    int el_fd = EventLoop<>::Open();
+    assert(el_fd >= 0);
+    EventLoop<Resource> el(el_fd);
 
     int fd = anetTcpServer(nullptr, 8000, "0.0.0.0", 0);
     assert(fd >= 0);
-    auto resource = std::make_unique<Resource>(0);
-    int r = manager.Acquire(fd, std::move(resource));
+    int r = el.Acquire(fd, std::make_unique<Resource>(0));
     assert(r == 0);
     r = el.AddEvent(fd, kReadable);
     assert(r == 0);
@@ -49,23 +47,22 @@ int main() {
         for (int i = 0; i < r; ++i) {
             const auto & event = events[i];
             int efd = EventLoop<>::GetEventFD(event);
-            auto & resource = manager.GetResource(efd);
+            auto & resource = el.GetResource(efd);
 
             if (resource->type == 0) { // acceptor
                 char client_ip[128];
                 int client_port, client_fd;
                 client_fd = anetTcpAccept(nullptr, efd, client_ip, 128, &client_port);
+                el.Acquire(client_fd, std::make_unique<Resource>(1));
                 printf("Accepted %s:%d\n", client_ip, client_port);
-                manager.Acquire(client_fd, std::make_unique<Resource>(1));
-                el.AddEvent(client_fd, kReadable);
                 anetNonBlock(nullptr, client_fd);
+                el.AddEvent(client_fd, kReadable);
             } else if (resource->type == 1) { // processor
                 ssize_t nread = read(efd, resource->processor.buf, 1024);
                 if (nread > 0) {
                     write(efd, resource->processor.buf, nread);
                 }
-                el.DelEvent(efd, kReadable | kWritable);
-                manager.Release(efd);
+                el.Release(efd);
             }
         }
     }

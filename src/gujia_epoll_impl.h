@@ -12,7 +12,7 @@ namespace gujia {
         struct epoll_event ee = {0}; /* avoid valgrind warning */
         /* If the fd was already monitored for some event, we need a MOD
          * operation. Otherwise we need an ADD operation. */
-        int op = masks_[fd] == AE_NONE ?
+        int op = masks_[fd] == kNone ?
                  EPOLL_CTL_ADD : EPOLL_CTL_MOD;
 
         ee.events = 0;

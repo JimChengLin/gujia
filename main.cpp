@@ -53,14 +53,15 @@ int main() {
                 char client_ip[128];
                 int client_port, client_fd;
                 client_fd = anetTcpAccept(nullptr, efd, client_ip, 128, &client_port);
-                el.Acquire(client_fd, std::make_unique<Resource>(1));
+                assert(client_fd >= 0);
                 printf("Accepted %s:%d\n", client_ip, client_port);
                 anetNonBlock(nullptr, client_fd);
+                el.Acquire(client_fd, std::make_unique<Resource>(1));
                 el.AddEvent(client_fd, kReadable);
             } else if (resource->type == 1) { // processor
                 ssize_t nread = read(efd, resource->processor.buf, 1024);
                 if (nread > 0) {
-                    write(efd, resource->processor.buf, nread);
+                    write(efd, resource->processor.buf, static_cast<size_t>(nread));
                 }
                 el.Release(efd);
             }
